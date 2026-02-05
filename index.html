@@ -1,0 +1,2184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Big Tech Stock Portfolio Tracker</title>
+<style>
+  :root {
+    --bg: #0a0e17;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --accent: #3b82f6;
+    --green: #10b981;
+    --red: #ef4444;
+    --orange: #f59e0b;
+    --purple: #8b5cf6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    padding: 32px 40px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .header h1 span { color: var(--accent); }
+
+  .header-subtitle {
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .last-updated {
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--surface2);
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 16px;
+  }
+
+  .btn-icon:hover { border-color: var(--accent); color: var(--text); }
+  .btn-icon.spinning svg { animation: spin 1s linear infinite; }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .header-stats {
+    display: flex;
+    gap: 32px;
+  }
+
+  .header-stat {
+    text-align: right;
+  }
+
+  .header-stat .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+  }
+
+  .header-stat .value {
+    font-size: 24px;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+
+  .header-stat .value.green { color: var(--green); }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    padding: 0 40px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .tab {
+    padding: 14px 24px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Status bar */
+  .status-bar {
+    padding: 8px 40px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-dim);
+    display: none;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .status-bar.visible { display: flex; }
+
+  .status-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  .status-text { flex: 1; }
+
+  .main {
+    padding: 32px 40px;
+  }
+
+  /* Network View */
+  .network-container {
+    position: relative;
+    width: 100%;
+    height: 640px;
+    background: var(--surface);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .network-canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  .network-legend {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background: rgba(10, 14, 23, 0.9);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-dim);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  /* Portfolio Grid */
+  .portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 20px;
+  }
+
+  .company-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .company-card:hover { border-color: var(--accent); }
+
+  .card-header {
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-company {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .card-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    color: #fff;
+  }
+
+  .card-name {
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .card-ticker {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .card-total {
+    text-align: right;
+  }
+
+  .card-total .label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .card-total .value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--green);
+  }
+
+  .holdings-list {
+    padding: 8px 0;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .holdings-list::-webkit-scrollbar { width: 4px; }
+  .holdings-list::-webkit-scrollbar-track { background: transparent; }
+  .holdings-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .holding-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 24px;
+    gap: 12px;
+    transition: background 0.15s;
+    cursor: default;
+  }
+
+  .holding-row:hover { background: var(--surface2); }
+
+  .holding-rank {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+
+  .holding-info { flex: 1; min-width: 0; }
+
+  .holding-name {
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .holding-ticker {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .holding-value {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .holding-amount {
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .holding-stake {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .holding-bar-container {
+    width: 80px;
+    flex-shrink: 0;
+  }
+
+  .holding-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--surface2);
+    overflow: hidden;
+  }
+
+  .holding-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+
+  .card-footer {
+    padding: 12px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  /* Data source badge */
+  .data-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .data-badge.sec { background: rgba(59,130,246,0.15); color: var(--accent); }
+  .data-badge.curated { background: rgba(148,163,184,0.15); color: var(--text-dim); }
+  .data-badge.price { background: rgba(16,185,129,0.15); color: var(--green); }
+
+  /* Card loading overlay */
+  .card-loading {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .card-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  /* Matrix View */
+  .matrix-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow-x: auto;
+    padding: 24px;
+  }
+
+  .matrix-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+  }
+
+  .matrix-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .matrix-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  .matrix-table tr:last-child td { border-bottom: none; }
+
+  .matrix-table tr:hover td { background: var(--surface2); }
+
+  .matrix-investor {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+  }
+
+  .matrix-investor-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .matrix-target {
+    display: inline-block;
+    padding: 4px 10px;
+    background: var(--surface2);
+    border-radius: 6px;
+    font-size: 12px;
+    margin: 2px 4px 2px 0;
+    white-space: nowrap;
+  }
+
+  .matrix-value { font-weight: 600; }
+  .matrix-value.positive { color: var(--green); }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    pointer-events: none;
+    z-index: 100;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    max-width: 280px;
+    display: none;
+  }
+
+  .tooltip-name { font-weight: 700; margin-bottom: 4px; }
+  .tooltip-detail { color: var(--text-dim); font-size: 12px; line-height: 1.5; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .empty-note {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .filter-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+  .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .sort-select {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 12px;
+    cursor: pointer;
+    margin-left: auto;
+  }
+
+  /* Settings Panel */
+  .settings-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .settings-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .settings-panel {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 400px;
+    height: 100%;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    z-index: 201;
+    transition: right 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .settings-panel.open { right: 0; }
+
+  .settings-header {
+    padding: 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .settings-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .settings-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--surface2);
+    color: var(--text-dim);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .settings-close:hover { color: var(--text); }
+
+  .settings-section {
+    padding: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .settings-section h3 {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  .settings-section p {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+
+  .settings-input-group {
+    display: flex;
+    gap: 8px;
+  }
+
+  .settings-input {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    font-family: monospace;
+  }
+
+  .settings-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .settings-btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .settings-btn:hover { opacity: 0.9; }
+
+  .settings-btn.danger {
+    background: var(--red);
+  }
+
+  .settings-status {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--green);
+  }
+
+  .settings-status.error { color: var(--red); }
+
+  .cache-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .cache-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--bg);
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .cache-item .cache-key { color: var(--text); font-weight: 600; }
+  .cache-item .cache-age { color: var(--text-dim); }
+
+  @media (max-width: 900px) {
+    .header { flex-direction: column; gap: 16px; padding: 24px 20px; }
+    .header-stats { justify-content: flex-start; }
+    .main { padding: 20px; }
+    .portfolio-grid { grid-template-columns: 1fr; }
+    .tabs { padding: 0 20px; overflow-x: auto; }
+    .settings-panel { width: 100%; right: -100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Big Tech <span>Stock Portfolios</span></h1>
+    <div class="header-subtitle">
+      <span>Tracking equity investments held by the world's largest technology companies</span>
+      <span class="last-updated" id="lastUpdated" style="display:none"></span>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="header-stats">
+      <div class="header-stat">
+        <div class="label">Companies Tracked</div>
+        <div class="value">9</div>
+      </div>
+      <div class="header-stat">
+        <div class="label">Total Holdings</div>
+        <div class="value" id="totalHoldings">--</div>
+      </div>
+      <div class="header-stat">
+        <div class="label">Combined Value</div>
+        <div class="value green" id="totalValue">--</div>
+      </div>
+    </div>
+    <button class="btn-icon" id="btnRefresh" title="Refresh live data">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 1v5h5"/>
+        <path d="M3.5 10a5.5 5.5 0 1 0 1-7.5L1 6"/>
+      </svg>
+    </button>
+    <button class="btn-icon" id="btnSettings" title="Settings">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="8" cy="8" r="2.5"/>
+        <path d="M13 8a5.17 5.17 0 0 0-.1-1l1.6-1.3a.4.4 0 0 0 .1-.4l-1.5-2.6a.38.38 0 0 0-.4-.2l-1.9.8a5 5 0 0 0-.9-.5l-.3-2a.4.4 0 0 0-.4-.3H6.8a.4.4 0 0 0-.4.3l-.3 2a5 5 0 0 0-.9.5l-1.9-.8a.38.38 0 0 0-.4.2L1.4 5.3a.4.4 0 0 0 .1.4L3.1 7a5.17 5.17 0 0 0 0 2l-1.6 1.3a.4.4 0 0 0-.1.4l1.5 2.6a.38.38 0 0 0 .4.2l1.9-.8a5 5 0 0 0 .9.5l.3 2a.4.4 0 0 0 .4.3h2.4a.4.4 0 0 0 .4-.3l.3-2a5 5 0 0 0 .9-.5l1.9.8a.38.38 0 0 0 .4-.2l1.5-2.6a.4.4 0 0 0-.1-.4L13.1 9a5.17 5.17 0 0 0-.1-1z"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- Status Bar -->
+<div class="status-bar" id="statusBar">
+  <div class="status-spinner"></div>
+  <span class="status-text" id="statusText">Initializing...</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-view="network">Network Map</div>
+  <div class="tab" data-view="portfolios">Portfolios</div>
+  <div class="tab" data-view="matrix">Holdings Matrix</div>
+</div>
+
+<div class="main">
+  <!-- Network View -->
+  <div class="view active" id="view-network">
+    <div class="network-container">
+      <canvas class="network-canvas" id="networkCanvas"></canvas>
+      <div class="network-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> Big Tech Investor</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div> Public Holding</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Private / Pre-IPO</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(59,130,246,0.3)"></div> Line = Investment (click to view source)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Portfolios View -->
+  <div class="view" id="view-portfolios">
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">All Companies</button>
+      <button class="filter-btn" data-filter="MSFT">Microsoft</button>
+      <button class="filter-btn" data-filter="GOOGL">Alphabet</button>
+      <button class="filter-btn" data-filter="AMZN">Amazon</button>
+      <button class="filter-btn" data-filter="NVDA">Nvidia</button>
+      <button class="filter-btn" data-filter="META">Meta</button>
+      <button class="filter-btn" data-filter="CRM">Salesforce</button>
+      <button class="filter-btn" data-filter="ORCL">Oracle</button>
+      <button class="filter-btn" data-filter="AAPL">Apple</button>
+      <button class="filter-btn" data-filter="005930.KS">Samsung</button>
+      <select class="sort-select" id="sortSelect">
+        <option value="value-desc">Sort: Highest Value</option>
+        <option value="value-asc">Sort: Lowest Value</option>
+        <option value="holdings-desc">Sort: Most Holdings</option>
+        <option value="name-asc">Sort: A-Z</option>
+      </select>
+    </div>
+    <div class="portfolio-grid" id="portfolioGrid"></div>
+  </div>
+
+  <!-- Matrix View -->
+  <div class="view" id="view-matrix">
+    <div class="matrix-wrapper">
+      <table class="matrix-table" id="matrixTable">
+        <thead>
+          <tr>
+            <th>Investor</th>
+            <th>Target Company</th>
+            <th>Type</th>
+            <th>Est. Value</th>
+            <th>Stake %</th>
+            <th>Sector</th>
+            <th>Source</th>
+          </tr>
+        </thead>
+        <tbody id="matrixBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip">
+  <div class="tooltip-name"></div>
+  <div class="tooltip-detail"></div>
+</div>
+
+<!-- Settings Panel -->
+<div class="settings-overlay" id="settingsOverlay"></div>
+<div class="settings-panel" id="settingsPanel">
+  <div class="settings-header">
+    <h2>Settings</h2>
+    <button class="settings-close" id="settingsClose">&times;</button>
+  </div>
+  <div class="settings-section">
+    <h3>Live Data Sources</h3>
+    <p>SEC EDGAR 13F filings are fetched automatically for NVIDIA and Amazon (the only tracked companies that file 13F-HR). Data is fetched via CORS proxy and cached for 24 hours.</p>
+  </div>
+  <div class="settings-section">
+    <h3>Stock Price API (Optional)</h3>
+    <p>Enter a free Finnhub API key to get live stock prices for public holdings. Get a free key at <a href="https://finnhub.io" target="_blank" style="color:var(--accent)">finnhub.io</a>. Prices are cached for 4 hours.</p>
+    <div class="settings-input-group">
+      <input type="text" class="settings-input" id="finnhubKeyInput" placeholder="Enter Finnhub API key...">
+      <button class="settings-btn" id="saveFinnhubKey">Save</button>
+    </div>
+    <div class="settings-status" id="finnhubStatus"></div>
+  </div>
+  <div class="settings-section">
+    <h3>Cache Management</h3>
+    <div class="cache-info" id="cacheInfo"></div>
+    <br>
+    <button class="settings-btn danger" id="clearCache">Clear All Cache</button>
+  </div>
+</div>
+
+<script>
+// ─── Curated Data (Tier 3 - always available) ────────────────────────
+const curatedCompanies = [
+  {
+    name: "Microsoft", ticker: "MSFT", color: "#00a4ef",
+    totalValue: 144.7,
+    holdings: [
+      { name: "OpenAI", ticker: "Private", value: 135, stake: "27%", sector: "AI", type: "private", source: "curated" },
+      { name: "Anthropic", ticker: "Private", value: 5, stake: "~2%", sector: "AI", type: "private", source: "curated" },
+      { name: "Cruise (GM)", ticker: "GM", value: 2, stake: "<1%", sector: "Autonomous Vehicles", type: "public", source: "curated" },
+      { name: "G42", ticker: "Private", value: 1.5, stake: "~5%", sector: "AI", type: "private", source: "curated" },
+      { name: "Inflection AI", ticker: "Private", value: 0.65, stake: "Acqui-hire", sector: "AI", type: "private", source: "curated" },
+      { name: "Mistral AI", ticker: "Private", value: 0.5, stake: "~1%", sector: "AI", type: "private", source: "curated" },
+    ]
+  },
+  {
+    name: "Alphabet", ticker: "GOOGL", color: "#4285f4",
+    totalValue: 13.0,
+    holdings: [
+      { name: "Anthropic", ticker: "Private", value: 3.0, stake: "~10%", sector: "AI", type: "private", source: "curated" },
+      { name: "SpaceX", ticker: "Private", value: 3.5, stake: "<1%", sector: "Aerospace", type: "private", source: "curated" },
+      { name: "Character.ai", ticker: "Private", value: 2.7, stake: "Licensing", sector: "AI", type: "private", source: "curated" },
+      { name: "GitLab", ticker: "GTLB", value: 0.55, stake: "~5%", sector: "DevOps", type: "public", source: "curated" },
+      { name: "AST SpaceMobile", ticker: "ASTS", value: 0.459, stake: "~4%", sector: "Telecom", type: "public", source: "curated" },
+      { name: "Planet Labs", ticker: "PL", value: 0.356, stake: "~7%", sector: "Space / Data", type: "public", source: "curated" },
+      { name: "Figma", ticker: "FIG", value: 0.35, stake: "<1%", sector: "Design / SaaS", type: "public", source: "curated" },
+      { name: "Tempus AI", ticker: "TEM", value: 0.32, stake: "~3%", sector: "AI / Healthcare", type: "public", source: "curated" },
+      { name: "Oscar Health", ticker: "OSCR", value: 0.28, stake: "~4%", sector: "Healthcare", type: "public", source: "curated" },
+      { name: "Arm Holdings", ticker: "ARM", value: 0.258, stake: "<1%", sector: "Semiconductors", type: "public", source: "curated" },
+      { name: "UiPath", ticker: "PATH", value: 0.22, stake: "~2%", sector: "Automation", type: "public", source: "curated" },
+      { name: "Exact Sciences", ticker: "EXAS", value: 0.19, stake: "<1%", sector: "Healthcare", type: "public", source: "curated" },
+      { name: "Recursion Pharma", ticker: "RXRX", value: 0.15, stake: "~2%", sector: "Biotech", type: "public", source: "curated" },
+      { name: "Prime Medicine", ticker: "PRME", value: 0.12, stake: "~13%", sector: "Biotech", type: "public", source: "curated" },
+      { name: "Runway", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI / Video", type: "private", source: "curated" },
+    ]
+  },
+  {
+    name: "Amazon", ticker: "AMZN", color: "#ff9900", cik: "1018724",
+    totalValue: 53.0,
+    holdings: [
+      { name: "Anthropic", ticker: "Private", value: 39, stake: "<33%", sector: "AI", type: "private", source: "curated" },
+      { name: "Scale AI", ticker: "Private", value: 5.0, stake: "~5%", sector: "AI / Data", type: "private", source: "curated" },
+      { name: "Rivian", ticker: "RIVN", value: 4.6, stake: "~16%", sector: "Electric Vehicles", type: "public", source: "curated" },
+      { name: "Hugging Face", ticker: "Private", value: 1.5, stake: "~3%", sector: "AI / Open Source", type: "private", source: "curated" },
+      { name: "Grail (Illumina)", ticker: "ILMN", value: 0.9, stake: "~2%", sector: "Biotech", type: "public", source: "curated" },
+      { name: "X-energy", ticker: "XE", value: 0.6, stake: "~2%", sector: "Nuclear Energy", type: "public", source: "curated" },
+      { name: "Adept AI", ticker: "Private", value: 0.4, stake: "Acqui-hire", sector: "AI", type: "private", source: "curated" },
+    ]
+  },
+  {
+    name: "Nvidia", ticker: "NVDA", color: "#76b900", cik: "1045810",
+    totalValue: 2.1,
+    holdings: [
+      { name: "CoreWeave", ticker: "CRWV", value: 1.0, stake: "~1%", sector: "Cloud / AI", type: "public", source: "curated" },
+      { name: "Databricks", ticker: "Private", value: 0.3, stake: "<1%", sector: "AI / Data", type: "private", source: "curated" },
+      { name: "Arm Holdings", ticker: "ARM", value: 0.147, stake: "<1%", sector: "Semiconductors", type: "public", source: "curated" },
+      { name: "WeRide", ticker: "WRD", value: 0.12, stake: "~3%", sector: "Autonomous Vehicles", type: "public", source: "curated" },
+      { name: "Applied Digital", ticker: "APLD", value: 0.1, stake: "~2%", sector: "Data Centers", type: "public", source: "curated" },
+      { name: "Cohere", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI", type: "private", source: "curated" },
+      { name: "Mistral AI", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI", type: "private", source: "curated" },
+      { name: "Recursion Pharma", ticker: "RXRX", value: 0.076, stake: "~1%", sector: "Biotech", type: "public", source: "curated" },
+      { name: "Runway", ticker: "Private", value: 0.05, stake: "<1%", sector: "AI / Video", type: "private", source: "curated" },
+      { name: "Perplexity AI", ticker: "Private", value: 0.03, stake: "<1%", sector: "AI / Search", type: "private", source: "curated" },
+    ]
+  },
+  {
+    name: "Meta", ticker: "META", color: "#0668e1",
+    totalValue: 16.0,
+    holdings: [
+      { name: "Scale AI", ticker: "Private", value: 14.3, stake: "~15%", sector: "AI / Data", type: "private", source: "curated" },
+      { name: "Jio Platforms", ticker: "Private", value: 1.5, stake: "~2%", sector: "Telecom / Digital", type: "private", source: "curated" },
+      { name: "Manus AI", ticker: "Private", value: 0.2, stake: "Acquired", sector: "AI", type: "private", source: "curated" },
+    ]
+  },
+  {
+    name: "Salesforce", ticker: "CRM", color: "#00a1e0",
+    totalValue: 1.15,
+    holdings: [
+      { name: "Anthropic", ticker: "Private", value: 0.75, stake: "~2%", sector: "AI", type: "private", source: "curated" },
+      { name: "Cohere", ticker: "Private", value: 0.25, stake: "~3%", sector: "AI", type: "private", source: "curated" },
+      { name: "Hugging Face", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI / Open Source", type: "private", source: "curated" },
+      { name: "Runway", ticker: "Private", value: 0.05, stake: "<1%", sector: "AI / Video", type: "private", source: "curated" },
+    ]
+  },
+  {
+    name: "Oracle", ticker: "ORCL", color: "#f80000",
+    totalValue: 0.7,
+    holdings: [
+      { name: "xAI", ticker: "Private", value: 0.5, stake: "<1%", sector: "AI", type: "private", source: "curated" },
+      { name: "Cohere", ticker: "Private", value: 0.2, stake: "~2%", sector: "AI", type: "private", source: "curated" },
+    ]
+  },
+  {
+    name: "Apple", ticker: "AAPL", color: "#a2aaad",
+    totalValue: 0,
+    holdings: []
+  },
+  {
+    name: "Samsung", ticker: "005930.KS", color: "#1428a0",
+    totalValue: 8.5,
+    holdings: [
+      { name: "Samsung Electro-Mechanics", ticker: "009150.KS", value: 2.5, stake: "~24%", sector: "Components", type: "public", source: "curated" },
+      { name: "Samsung SDS", ticker: "018260.KS", value: 1.8, stake: "~23%", sector: "IT Services", type: "public", source: "curated" },
+      { name: "Samsung Biologics", ticker: "207940.KS", value: 1.5, stake: "~31%", sector: "Biotech", type: "public", source: "curated" },
+      { name: "Samsung SDI", ticker: "006400.KS", value: 1.2, stake: "~20%", sector: "Batteries", type: "public", source: "curated" },
+      { name: "Rainbow Robotics", ticker: "277810.KQ", value: 0.3, stake: "~15%", sector: "Robotics", type: "public", source: "curated" },
+      { name: "Wacom", ticker: "6727.T", value: 0.15, stake: "~5%", sector: "Input Devices", type: "public", source: "curated" },
+      { name: "Hotel Shilla", ticker: "008770.KS", value: 0.2, stake: "~5%", sector: "Hospitality", type: "public", source: "curated" },
+    ]
+  },
+];
+
+// Working copy of companies data (mutated by live data)
+let companies = JSON.parse(JSON.stringify(curatedCompanies));
+
+// Track data sources per company
+const dataSourceMap = {}; // ticker -> { type: 'sec'|'curated', label: 'SEC Filing Q3 2025' }
+
+// ─── Cache Module ────────────────────────────────────────────────────
+const Cache = {
+  SEC_TTL: 24 * 60 * 60 * 1000,    // 24 hours
+  PRICE_TTL: 4 * 60 * 60 * 1000,   // 4 hours
+
+  get(key) {
+    try {
+      const raw = localStorage.getItem('btt_' + key);
+      if (!raw) return null;
+      const entry = JSON.parse(raw);
+      const ttl = key === 'prices' ? this.PRICE_TTL : this.SEC_TTL;
+      if (Date.now() - entry.timestamp > ttl) return null;
+      return entry;
+    } catch { return null; }
+  },
+
+  set(key, data) {
+    try {
+      localStorage.setItem('btt_' + key, JSON.stringify({
+        data,
+        timestamp: Date.now()
+      }));
+    } catch (e) {
+      console.warn('Cache write failed:', e);
+    }
+  },
+
+  clear() {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('btt_')) keys.push(k);
+    }
+    keys.forEach(k => localStorage.removeItem(k));
+  },
+
+  getAll() {
+    const entries = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('btt_')) {
+        try {
+          const entry = JSON.parse(localStorage.getItem(k));
+          entries.push({
+            key: k.replace('btt_', ''),
+            timestamp: entry.timestamp,
+            age: Date.now() - entry.timestamp
+          });
+        } catch {}
+      }
+    }
+    return entries;
+  }
+};
+
+// ─── SEC EDGAR Fetcher (Tier 1) ─────────────────────────────────────
+const SEC = {
+  CORS_PROXY: 'https://corsproxy.io/?url=',
+  BASE: 'https://data.sec.gov',
+  _lastRequest: 0,
+
+  async _rateLimitedFetch(url) {
+    const now = Date.now();
+    const wait = Math.max(0, 120 - (now - this._lastRequest));
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    this._lastRequest = Date.now();
+    const resp = await fetch(this.CORS_PROXY + encodeURIComponent(url));
+    if (!resp.ok) throw new Error(`SEC fetch failed: ${resp.status} ${resp.statusText}`);
+    return resp;
+  },
+
+  async fetch13F(cik, companyName) {
+    setStatus(`Fetching ${companyName} SEC filings...`);
+
+    // Pad CIK to 10 digits
+    const paddedCik = cik.padStart(10, '0');
+
+    // Step 1: Get submissions JSON
+    const subUrl = `${this.BASE}/submissions/CIK${paddedCik}.json`;
+    const subResp = await this._rateLimitedFetch(subUrl);
+    const subData = await subResp.json();
+
+    // Step 2: Find latest 13F-HR
+    const forms = subData.filings?.recent?.form || [];
+    const accessions = subData.filings?.recent?.accessionNumber || [];
+    const dates = subData.filings?.recent?.filingDate || [];
+    const primaryDocs = subData.filings?.recent?.primaryDocument || [];
+
+    let filingIdx = -1;
+    for (let i = 0; i < forms.length; i++) {
+      if (forms[i] === '13F-HR') {
+        filingIdx = i;
+        break;
+      }
+    }
+
+    if (filingIdx === -1) {
+      console.warn(`No 13F-HR found for ${companyName}`);
+      return null;
+    }
+
+    const accession = accessions[filingIdx];
+    const filingDate = dates[filingIdx];
+    const accessionDash = accession.replace(/-/g, '');
+
+    setStatus(`Parsing ${companyName} 13F filing from ${filingDate}...`);
+
+    // Step 3: Get filing index to find infotable XML
+    const indexUrl = `${this.BASE}/Archives/edgar/data/${cik}/${accessionDash}/index.json`;
+    const indexResp = await this._rateLimitedFetch(indexUrl);
+    const indexData = await indexResp.json();
+
+    // Find infotable XML file
+    const items = indexData.directory?.item || [];
+    let infoTableFile = null;
+    for (const item of items) {
+      const name = (item.name || '').toLowerCase();
+      if (name.includes('infotable') && (name.endsWith('.xml') || name.endsWith('.html'))) {
+        infoTableFile = item.name;
+        break;
+      }
+    }
+
+    // Fallback: look for any XML that's not the primary doc
+    if (!infoTableFile) {
+      for (const item of items) {
+        const name = (item.name || '').toLowerCase();
+        if (name.endsWith('.xml') && !name.includes('primary') && !name.includes('r9') && !name.includes('filing')) {
+          infoTableFile = item.name;
+          break;
+        }
+      }
+    }
+
+    if (!infoTableFile) {
+      console.warn(`No infotable found for ${companyName} 13F`);
+      return null;
+    }
+
+    // Step 4: Fetch and parse infotable XML
+    const tableUrl = `${this.BASE}/Archives/edgar/data/${cik}/${accessionDash}/${infoTableFile}`;
+    const tableResp = await this._rateLimitedFetch(tableUrl);
+    const tableText = await tableResp.text();
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(tableText, 'text/xml');
+
+    // Handle namespace - try both with and without namespace prefix
+    const infoTables = doc.querySelectorAll('infoTable') || [];
+    let entries = [...infoTables];
+
+    // Also try namespace-prefixed version
+    if (entries.length === 0) {
+      const nsTables = doc.getElementsByTagNameNS('*', 'infoTable');
+      entries = [...nsTables];
+    }
+
+    if (entries.length === 0) {
+      console.warn(`No infoTable entries found in ${companyName} 13F XML`);
+      return null;
+    }
+
+    const holdings = [];
+    for (const entry of entries) {
+      const getText = (tagName) => {
+        let el = entry.querySelector(tagName);
+        if (!el) {
+          const els = entry.getElementsByTagNameNS('*', tagName);
+          if (els.length > 0) el = els[0];
+        }
+        return el ? el.textContent.trim() : '';
+      };
+
+      const issuerName = getText('nameOfIssuer');
+      const cusip = getText('cusip');
+      const valueStr = getText('value');
+      const sharesStr = getText('sshPrnamt') || getText('Amt');
+      const shareType = getText('sshPrnamtType') || getText('Type') || 'SH';
+
+      const valueThousands = parseInt(valueStr, 10) || 0;
+      const shares = parseInt(sharesStr, 10) || 0;
+      const valueBillions = valueThousands / 1000000; // value in XML is thousands, convert to billions
+
+      if (issuerName && valueThousands > 0) {
+        holdings.push({
+          name: issuerName,
+          cusip,
+          value: valueBillions,
+          shares,
+          shareType,
+          source: 'sec',
+          sourceLabel: `SEC 13F ${filingDate}`
+        });
+      }
+    }
+
+    // Sort by value descending
+    holdings.sort((a, b) => b.value - a.value);
+
+    // Calculate quarter from filing date
+    const fDate = new Date(filingDate);
+    const quarter = `Q${Math.ceil(fDate.getMonth() / 3) || 4} ${fDate.getFullYear()}`;
+
+    return {
+      companyName,
+      cik,
+      filingDate,
+      quarter,
+      holdings,
+      totalValue: holdings.reduce((sum, h) => sum + h.value, 0)
+    };
+  }
+};
+
+// ─── Stock Price Fetcher (Tier 2) ───────────────────────────────────
+const PriceFetcher = {
+  async fetchPrices(tickers) {
+    const apiKey = localStorage.getItem('btt_finnhub_key');
+    if (!apiKey) return null;
+
+    setStatus('Fetching live stock prices...');
+    const prices = {};
+
+    for (const ticker of tickers) {
+      // Skip private, Korean, and Japanese tickers (Finnhub doesn't support them well)
+      if (ticker === 'Private' || ticker.includes('.KS') || ticker.includes('.KQ') || ticker.includes('.T')) continue;
+
+      try {
+        const resp = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(ticker)}&token=${encodeURIComponent(apiKey)}`);
+        if (!resp.ok) continue;
+        const data = await resp.json();
+        if (data.c && data.c > 0) {
+          prices[ticker] = { price: data.c, change: data.dp || 0 };
+        }
+        // Rate limit: Finnhub free tier is 60/min
+        await new Promise(r => setTimeout(r, 100));
+      } catch (e) {
+        console.warn(`Price fetch failed for ${ticker}:`, e);
+      }
+    }
+
+    return Object.keys(prices).length > 0 ? prices : null;
+  }
+};
+
+// ─── Data Merge Layer ───────────────────────────────────────────────
+function mergeData(secResults, prices) {
+  // Start with deep copy of curated data
+  companies = JSON.parse(JSON.stringify(curatedCompanies));
+
+  // Overlay SEC 13F data for NVIDIA and Amazon
+  if (secResults) {
+    for (const result of secResults) {
+      if (!result) continue;
+
+      const company = companies.find(c => c.cik === result.cik);
+      if (!company) continue;
+
+      dataSourceMap[company.ticker] = {
+        type: 'sec',
+        label: `SEC Filing ${result.quarter}`
+      };
+
+      // Merge 13F holdings with curated data
+      // Keep curated private holdings (13F only has public), update/add public ones
+      const curatedPrivate = company.holdings.filter(h => h.type === 'private');
+      const sec13FHoldings = result.holdings.map(h => ({
+        name: h.name,
+        ticker: 'Public',
+        value: h.value,
+        stake: h.shares ? h.shares.toLocaleString() + ' shares' : '',
+        sector: 'Public Equity',
+        type: 'public',
+        source: 'sec',
+        sourceLabel: h.sourceLabel,
+        shares: h.shares,
+        cusip: h.cusip
+      }));
+
+      // Try to match SEC holdings with curated ones for better metadata
+      for (const secH of sec13FHoldings) {
+        const curatedMatch = company.holdings.find(ch =>
+          ch.type === 'public' && fuzzyMatch(ch.name, secH.name)
+        );
+        if (curatedMatch) {
+          secH.ticker = curatedMatch.ticker;
+          secH.sector = curatedMatch.sector;
+          secH.stake = curatedMatch.stake;
+        }
+      }
+
+      company.holdings = [...curatedPrivate, ...sec13FHoldings];
+
+      // Update total value
+      const secTotal = result.totalValue;
+      const privateTotal = curatedPrivate.reduce((sum, h) => sum + h.value, 0);
+      company.totalValue = secTotal + privateTotal;
+    }
+  }
+
+  // Overlay stock prices
+  if (prices) {
+    for (const company of companies) {
+      for (const holding of company.holdings) {
+        const priceData = prices[holding.ticker];
+        if (priceData && holding.shares) {
+          const liveValue = (holding.shares * priceData.price) / 1e9; // convert to billions
+          holding.value = liveValue;
+          holding.priceChange = priceData.change;
+          holding.source = 'price';
+          holding.sourceLabel = 'Live Price';
+        }
+      }
+      // Recalculate total
+      company.totalValue = company.holdings.reduce((sum, h) => sum + h.value, 0);
+    }
+  }
+
+  // Set curated source for companies without live data
+  for (const company of companies) {
+    if (!dataSourceMap[company.ticker]) {
+      dataSourceMap[company.ticker] = { type: 'curated', label: 'Research Data' };
+    }
+  }
+}
+
+function fuzzyMatch(a, b) {
+  const normalize = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const na = normalize(a);
+  const nb = normalize(b);
+  return na.includes(nb) || nb.includes(na) || na === nb;
+}
+
+// ─── Status Bar ─────────────────────────────────────────────────────
+function setStatus(text) {
+  const bar = document.getElementById('statusBar');
+  const txt = document.getElementById('statusText');
+  txt.textContent = text;
+  bar.classList.add('visible');
+}
+
+function hideStatus() {
+  document.getElementById('statusBar').classList.remove('visible');
+}
+
+function updateLastUpdated(timestamp) {
+  const el = document.getElementById('lastUpdated');
+  if (timestamp) {
+    const d = new Date(timestamp);
+    el.textContent = 'Updated: ' + d.toLocaleString();
+    el.style.display = 'inline-block';
+  }
+}
+
+// ─── Main Data Fetch Orchestrator ───────────────────────────────────
+const SEC_FILERS = [
+  { cik: '1045810', name: 'Nvidia', ticker: 'NVDA' },
+  { cik: '1018724', name: 'Amazon', ticker: 'AMZN' }
+];
+
+async function fetchLiveData(forceRefresh = false) {
+  const btnRefresh = document.getElementById('btnRefresh');
+  btnRefresh.classList.add('spinning');
+
+  try {
+    // Check cache first
+    let secResults = [];
+    let prices = null;
+    let anyFetched = false;
+
+    // Fetch SEC 13F data for each filer
+    for (const filer of SEC_FILERS) {
+      const cacheKey = `sec_${filer.cik}`;
+
+      if (!forceRefresh) {
+        const cached = Cache.get(cacheKey);
+        if (cached) {
+          secResults.push(cached.data);
+          continue;
+        }
+      }
+
+      try {
+        const result = await SEC.fetch13F(filer.cik, filer.name);
+        if (result) {
+          secResults.push(result);
+          Cache.set(cacheKey, result);
+          anyFetched = true;
+        }
+      } catch (e) {
+        console.warn(`Failed to fetch 13F for ${filer.name}:`, e);
+        setStatus(`Failed to fetch ${filer.name} 13F: ${e.message}`);
+        await new Promise(r => setTimeout(r, 1500));
+      }
+    }
+
+    // Fetch stock prices if API key is configured
+    const apiKey = localStorage.getItem('btt_finnhub_key');
+    if (apiKey) {
+      const cacheKey = 'prices';
+      if (!forceRefresh) {
+        const cached = Cache.get(cacheKey);
+        if (cached) {
+          prices = cached.data;
+        }
+      }
+
+      if (!prices) {
+        // Collect all public tickers
+        const allTickers = new Set();
+        companies.forEach(c => c.holdings.forEach(h => {
+          if (h.type === 'public' && h.ticker !== 'Public') allTickers.add(h.ticker);
+        }));
+        try {
+          prices = await PriceFetcher.fetchPrices([...allTickers]);
+          if (prices) {
+            Cache.set(cacheKey, prices);
+            anyFetched = true;
+          }
+        } catch (e) {
+          console.warn('Price fetch failed:', e);
+        }
+      }
+    }
+
+    // Merge all data
+    mergeData(secResults.length > 0 ? secResults : null, prices);
+
+    if (anyFetched || secResults.length > 0) {
+      updateLastUpdated(Date.now());
+    }
+
+    setStatus('Data loaded successfully');
+    setTimeout(hideStatus, 2000);
+
+  } catch (e) {
+    console.error('Live data fetch error:', e);
+    setStatus('Error fetching live data. Using curated data.');
+    setTimeout(hideStatus, 3000);
+  } finally {
+    btnRefresh.classList.remove('spinning');
+    updateStats();
+    renderPortfolios();
+    renderMatrix();
+    if (document.getElementById('view-network').classList.contains('active')) {
+      drawNetwork();
+    }
+  }
+}
+
+// ─── Computed stats ──────────────────────────────────────────────────
+function updateStats() {
+  let totalHoldingCount = 0;
+  let totalValueSum = 0;
+  companies.forEach(c => {
+    totalHoldingCount += c.holdings.length;
+    totalValueSum += c.totalValue;
+  });
+  document.getElementById('totalHoldings').textContent = totalHoldingCount;
+  document.getElementById('totalValue').textContent = '$' + totalValueSum.toFixed(1) + 'B';
+}
+updateStats();
+
+// ─── Tab switching ───────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-' + tab.dataset.view).classList.add('active');
+    if (tab.dataset.view === 'network') drawNetwork();
+  });
+});
+
+// ─── Format value helper ────────────────────────────────────────────
+function formatValue(v) {
+  if (v >= 1) return '$' + v.toFixed(1) + 'B';
+  if (v >= 0.001) return '$' + (v * 1000).toFixed(0) + 'M';
+  return '$' + (v * 1000000).toFixed(0) + 'K';
+}
+
+// ─── Portfolio Cards ─────────────────────────────────────────────────
+function renderPortfolios(filter = 'all', sort = 'value-desc') {
+  // Preserve current filter/sort from UI if not specified
+  if (arguments.length === 0) {
+    const activeFilterEl = document.querySelector('.filter-btn.active');
+    if (activeFilterEl) filter = activeFilterEl.dataset.filter;
+    const sortEl = document.getElementById('sortSelect');
+    if (sortEl) sort = sortEl.value;
+  }
+
+  const grid = document.getElementById('portfolioGrid');
+  grid.innerHTML = '';
+
+  let filtered = filter === 'all' ? [...companies] : companies.filter(c => c.ticker === filter);
+
+  if (sort === 'value-desc') filtered.sort((a, b) => b.totalValue - a.totalValue);
+  else if (sort === 'value-asc') filtered.sort((a, b) => a.totalValue - b.totalValue);
+  else if (sort === 'holdings-desc') filtered.sort((a, b) => b.holdings.length - a.holdings.length);
+  else if (sort === 'name-asc') filtered.sort((a, b) => a.name.localeCompare(b.name));
+
+  filtered.forEach(company => {
+    const source = dataSourceMap[company.ticker] || { type: 'curated', label: 'Research Data' };
+    const badgeClass = source.type === 'sec' ? 'sec' : 'curated';
+
+    if (company.holdings.length === 0) {
+      const card = document.createElement('div');
+      card.className = 'company-card';
+      card.innerHTML = `
+        <div class="card-header">
+          <div class="card-company">
+            <div class="card-logo" style="background:${company.color}">${company.name[0]}</div>
+            <div>
+              <div class="card-name">${company.name}</div>
+              <div class="card-ticker">${company.ticker}</div>
+            </div>
+          </div>
+          <div class="card-total">
+            <div class="label">Portfolio Value</div>
+            <div class="value" style="color:var(--text-dim)">N/A</div>
+          </div>
+        </div>
+        <div class="empty-note">No disclosed public equity investments.<br>Apple primarily holds cash, treasuries, and corporate bonds.</div>
+        <div class="card-footer">
+          <span class="data-badge ${badgeClass}">${source.label}</span>
+          <span></span>
+        </div>
+      `;
+      grid.appendChild(card);
+      return;
+    }
+
+    const maxVal = Math.max(...company.holdings.map(h => h.value));
+    const publicCount = company.holdings.filter(h => h.type === 'public').length;
+    const privateCount = company.holdings.filter(h => h.type === 'private').length;
+
+    const holdingsHTML = [...company.holdings]
+      .sort((a, b) => b.value - a.value)
+      .map((h, i) => {
+        const barPct = maxVal > 0 ? (h.value / maxVal) * 100 : 0;
+        const barColor = h.type === 'public' ? 'var(--green)' : 'var(--orange)';
+        const sourceIcon = h.source === 'sec' ? ' *' : h.source === 'price' ? ' $' : '';
+        return `
+          <div class="holding-row">
+            <div class="holding-rank">${i + 1}</div>
+            <div class="holding-info">
+              <div class="holding-name">${h.name}${sourceIcon}</div>
+              <div class="holding-ticker">${h.ticker} &middot; ${h.sector}</div>
+            </div>
+            <div class="holding-bar-container">
+              <div class="holding-bar">
+                <div class="holding-bar-fill" style="width:${barPct}%;background:${barColor}"></div>
+              </div>
+            </div>
+            <div class="holding-value">
+              <div class="holding-amount">${formatValue(h.value)}</div>
+              <div class="holding-stake">${h.stake} stake</div>
+            </div>
+          </div>`;
+      }).join('');
+
+    const card = document.createElement('div');
+    card.className = 'company-card';
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-company">
+          <div class="card-logo" style="background:${company.color}">${company.name[0]}</div>
+          <div>
+            <div class="card-name">${company.name}</div>
+            <div class="card-ticker">${company.ticker}</div>
+          </div>
+        </div>
+        <div class="card-total">
+          <div class="label">Portfolio Value</div>
+          <div class="value">${formatValue(company.totalValue)}</div>
+        </div>
+      </div>
+      <div class="holdings-list">${holdingsHTML}</div>
+      <div class="card-footer">
+        <span class="data-badge ${badgeClass}">${source.label}</span>
+        <span>${publicCount} public &middot; ${privateCount} private &middot; ${company.holdings.length} total</span>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+// Filter buttons
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderPortfolios(btn.dataset.filter, document.getElementById('sortSelect').value);
+  });
+});
+
+document.getElementById('sortSelect').addEventListener('change', (e) => {
+  const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+  renderPortfolios(activeFilter, e.target.value);
+});
+
+renderPortfolios();
+
+// ─── Matrix View ─────────────────────────────────────────────────────
+function renderMatrix() {
+  const tbody = document.getElementById('matrixBody');
+  tbody.innerHTML = '';
+
+  companies.forEach(company => {
+    const compSource = dataSourceMap[company.ticker] || { type: 'curated', label: 'Research Data' };
+
+    company.holdings.forEach(h => {
+      const hSource = h.source || compSource.type;
+      const hLabel = h.sourceLabel || compSource.label;
+      const badgeClass = hSource === 'sec' ? 'sec' : hSource === 'price' ? 'price' : 'curated';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div class="matrix-investor">
+            <div class="matrix-investor-logo" style="background:${company.color}">${company.name[0]}</div>
+            ${company.name}
+          </div>
+        </td>
+        <td>
+          <span class="matrix-target">${h.name}</span>
+          <span style="color:var(--text-dim);font-size:11px">${h.ticker}</span>
+        </td>
+        <td><span style="color:${h.type === 'public' ? 'var(--green)' : 'var(--orange)'};font-size:12px;font-weight:600">${h.type === 'public' ? 'Public' : 'Private'}</span></td>
+        <td class="matrix-value positive">${formatValue(h.value)}</td>
+        <td>${h.stake}</td>
+        <td style="color:var(--text-dim)">${h.sector}</td>
+        <td><span class="data-badge ${badgeClass}">${hLabel}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+}
+renderMatrix();
+
+// ─── Source URL Generator ─────────────────────────────────────────────
+function getSourceUrl(investorTicker, holding) {
+  const company = companies.find(c => c.ticker === investorTicker);
+  // SEC 13F filers - link to their EDGAR 13F page
+  if (company && company.cik) {
+    const paddedCik = company.cik.padStart(10, '0');
+    return `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${paddedCik}&type=13F-HR&dateb=&owner=include&count=10`;
+  }
+  // Public holdings with real tickers - link to SEC EDGAR for the holding
+  if (holding.ticker && holding.ticker !== 'Private' && holding.ticker !== 'Public'
+      && !holding.ticker.includes('.KS') && !holding.ticker.includes('.KQ') && !holding.ticker.includes('.T')) {
+    return `https://www.sec.gov/cgi-bin/browse-edgar?company=&CIK=${encodeURIComponent(holding.ticker)}&type=SC+13D&dateb=&owner=include&count=10&search_text=&action=getcompany`;
+  }
+  // Korean/Japanese tickers
+  if (holding.ticker && (holding.ticker.includes('.KS') || holding.ticker.includes('.KQ'))) {
+    return `https://dart.fss.or.kr/dsab007/main.do?option=corp&textCrpNm=${encodeURIComponent(holding.name)}`;
+  }
+  // Private holdings - search for the investment announcement
+  const investorName = company ? company.name : investorTicker;
+  return `https://www.google.com/search?q=${encodeURIComponent(investorName + ' ' + holding.name + ' investment stake ownership')}`;
+}
+
+// ─── Network Visualization (Animated) ────────────────────────────────
+const canvas = document.getElementById('networkCanvas');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+let nodes = [];
+let edges = [];
+let particles = [];
+let animFrame;
+let hoveredNode = null;
+let hoveredEdge = null;
+let networkTime = 0;
+let networkW = 0;
+let networkH = 0;
+let dragNode = null;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+let didDrag = false;
+
+function setupNetwork() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.scale(dpr, dpr);
+
+  networkW = rect.width;
+  networkH = rect.height;
+  const cx = networkW / 2;
+  const cy = networkH / 2;
+
+  nodes = [];
+  edges = [];
+  particles = [];
+
+  // Place investor nodes in a circle
+  const investorRadius = Math.min(networkW, networkH) * 0.3;
+  const investorCompanies = companies.filter(c => c.holdings.length > 0);
+
+  investorCompanies.forEach((c, i) => {
+    const angle = (i / investorCompanies.length) * Math.PI * 2 - Math.PI / 2;
+    const baseX = cx + Math.cos(angle) * investorRadius;
+    const baseY = cy + Math.sin(angle) * investorRadius;
+    nodes.push({
+      id: c.ticker,
+      label: c.name,
+      baseX, baseY,
+      x: baseX, y: baseY,
+      r: 28 + Math.min(c.totalValue / 5, 20),
+      color: c.color,
+      type: 'investor',
+      value: c.totalValue,
+      holdings: c.holdings.length,
+      phase: Math.random() * Math.PI * 2,  // random phase for bobbing
+      bobSpeed: 0.3 + Math.random() * 0.4,
+      bobAmpX: 1.5 + Math.random() * 2,
+      bobAmpY: 2 + Math.random() * 2.5,
+    });
+  });
+
+  // Collect unique holdings
+  const holdingMap = new Map();
+  companies.forEach(c => {
+    c.holdings.forEach(h => {
+      const key = h.name;
+      if (!holdingMap.has(key)) {
+        holdingMap.set(key, { ...h, investors: [c.name], investorTickers: [c.ticker] });
+      } else {
+        const existing = holdingMap.get(key);
+        existing.investors.push(c.name);
+        existing.investorTickers.push(c.ticker);
+      }
+    });
+  });
+
+  // Place holding nodes
+  const holdingArr = [...holdingMap.values()];
+  const outerRadius = Math.min(networkW, networkH) * 0.44;
+
+  holdingArr.forEach((h, i) => {
+    const angle = (i / holdingArr.length) * Math.PI * 2 - Math.PI / 2 + 0.15;
+    const jitter = (Math.random() - 0.5) * 30;
+    const baseX = cx + Math.cos(angle) * (outerRadius + jitter);
+    const baseY = cy + Math.sin(angle) * (outerRadius + jitter);
+    nodes.push({
+      id: h.name,
+      label: h.name,
+      baseX, baseY,
+      x: baseX, y: baseY,
+      r: 6 + Math.min(h.value * 2, 16),
+      color: h.type === 'public' ? '#10b981' : '#f59e0b',
+      type: 'holding',
+      value: h.value,
+      sector: h.sector,
+      investors: h.investors,
+      holdingType: h.type,
+      phase: Math.random() * Math.PI * 2,
+      bobSpeed: 0.5 + Math.random() * 0.6,
+      bobAmpX: 1 + Math.random() * 1.5,
+      bobAmpY: 1 + Math.random() * 1.5,
+    });
+  });
+
+  // Build edges with source URLs
+  companies.forEach(c => {
+    c.holdings.forEach(h => {
+      const url = getSourceUrl(c.ticker, h);
+      edges.push({
+        from: c.ticker,
+        to: h.name,
+        value: h.value,
+        url,
+        investorName: c.name,
+        holdingName: h.name,
+        holdingType: h.type,
+        particleSpeed: 0.15 + Math.random() * 0.2,
+        particleOffset: Math.random(),
+      });
+    });
+  });
+
+  // Create particles for each edge
+  edges.forEach((e, idx) => {
+    // Number of particles proportional to value (1-4)
+    const count = Math.min(4, Math.max(1, Math.ceil(Math.log10(e.value * 1000 + 1))));
+    for (let p = 0; p < count; p++) {
+      particles.push({
+        edgeIdx: idx,
+        t: p / count,  // spread evenly along edge
+        speed: (0.08 + Math.random() * 0.12) * (0.7 + Math.random() * 0.6),
+        size: 1.2 + Math.random() * 1.5,
+      });
+    }
+  });
+}
+
+function getNode(id) {
+  return nodes.find(n => n.id === id);
+}
+
+function distToSegment(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+  let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+
+function findEdgeAt(mx, my) {
+  let best = null;
+  let bestDist = 8; // pixel threshold for edge hit detection
+  for (const e of edges) {
+    const from = getNode(e.from);
+    const to = getNode(e.to);
+    if (!from || !to) continue;
+    const d = distToSegment(mx, my, from.x, from.y, to.x, to.y);
+    if (d < bestDist) {
+      bestDist = d;
+      best = e;
+    }
+  }
+  return best;
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return { r, g, b };
+}
+
+function drawNetwork() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  setupNetwork();
+  networkTime = 0;
+
+  function draw() {
+    networkTime += 0.016; // ~60fps time step
+    ctx.clearRect(0, 0, networkW, networkH);
+
+    // Update node positions (gentle bobbing, skip dragged node)
+    nodes.forEach(n => {
+      if (n === dragNode) return;
+      n.x = n.baseX + Math.sin(networkTime * n.bobSpeed + n.phase) * n.bobAmpX;
+      n.y = n.baseY + Math.cos(networkTime * n.bobSpeed * 0.7 + n.phase + 1) * n.bobAmpY;
+    });
+
+    // Draw edges
+    edges.forEach((e, idx) => {
+      const from = getNode(e.from);
+      const to = getNode(e.to);
+      if (!from || !to) return;
+
+      const isHoveredEdge = hoveredEdge === e;
+      const isNodeHighlighted = hoveredNode &&
+        (hoveredNode.id === from.id || hoveredNode.id === to.id);
+      const isHighlighted = isHoveredEdge || isNodeHighlighted;
+
+      let alpha, width;
+      if (hoveredNode || hoveredEdge) {
+        alpha = isHighlighted ? 0.6 : 0.04;
+        width = isHighlighted ? 2.5 : 0.5;
+      } else {
+        alpha = 0.12 + Math.sin(networkTime * 0.5 + idx * 0.3) * 0.03;
+        width = 1;
+      }
+
+      // Draw the main edge line
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+
+      if (isHoveredEdge) {
+        // Glowing edge on hover
+        ctx.strokeStyle = `rgba(99, 170, 255, ${alpha})`;
+        ctx.lineWidth = width + 2;
+        ctx.stroke();
+        ctx.strokeStyle = `rgba(59, 130, 246, ${alpha + 0.2})`;
+        ctx.lineWidth = width;
+        ctx.stroke();
+      } else {
+        ctx.strokeStyle = `rgba(59, 130, 246, ${alpha})`;
+        ctx.lineWidth = width;
+        ctx.stroke();
+      }
+    });
+
+    // Draw particles flowing along edges
+    particles.forEach(p => {
+      const e = edges[p.edgeIdx];
+      const from = getNode(e.from);
+      const to = getNode(e.to);
+      if (!from || !to) return;
+
+      const isHoveredEdge = hoveredEdge === e;
+      const isNodeHighlighted = hoveredNode &&
+        (hoveredNode.id === from.id || hoveredNode.id === to.id);
+      const isHighlighted = isHoveredEdge || isNodeHighlighted;
+
+      // Dim particles for non-highlighted edges when something is hovered
+      if ((hoveredNode || hoveredEdge) && !isHighlighted) return;
+
+      // Advance particle
+      p.t += p.speed * 0.016;
+      if (p.t > 1) p.t -= 1;
+
+      const px = from.x + (to.x - from.x) * p.t;
+      const py = from.y + (to.y - from.y) * p.t;
+
+      // Fade in/out at endpoints
+      const edgeFade = Math.min(p.t * 5, (1 - p.t) * 5, 1);
+      const baseAlpha = isHighlighted ? 0.9 : 0.45;
+
+      ctx.beginPath();
+      ctx.arc(px, py, p.size * (isHighlighted ? 1.5 : 1), 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(100, 160, 255, ${baseAlpha * edgeFade})`;
+      ctx.fill();
+    });
+
+    // Draw nodes
+    nodes.forEach(n => {
+      const isHighlighted = (hoveredNode || hoveredEdge) && (
+        (hoveredNode && hoveredNode.id === n.id) ||
+        edges.some(e => {
+          const match = (e.from === n.id || e.to === n.id);
+          if (hoveredNode) return match && (e.from === hoveredNode.id || e.to === hoveredNode.id);
+          if (hoveredEdge) return match && (e === hoveredEdge);
+          return false;
+        })
+      );
+      const alpha = (hoveredNode || hoveredEdge) ? (isHighlighted ? 1 : 0.12) : 1;
+
+      // Pulsing glow for investor nodes
+      if (n.type === 'investor' && (!(hoveredNode || hoveredEdge) || isHighlighted)) {
+        const pulse = 0.8 + Math.sin(networkTime * 1.2 + n.phase) * 0.2;
+        const glowR = n.r * (1.8 + pulse * 0.4);
+        const grad = ctx.createRadialGradient(n.x, n.y, n.r * 0.5, n.x, n.y, glowR);
+        const rgb = hexToRgb(n.color);
+        grad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},${0.15 * pulse})`);
+        grad.addColorStop(1, 'transparent');
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+
+      // Holding node subtle pulse
+      if (n.type === 'holding' && (!(hoveredNode || hoveredEdge) || isHighlighted)) {
+        const pulse = 0.5 + Math.sin(networkTime * 2 + n.phase) * 0.5;
+        const rgb = hexToRgb(n.color);
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r + 3 + pulse * 2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${0.08 * pulse})`;
+        ctx.fill();
+      }
+
+      // Node circle
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = n.color;
+      ctx.fill();
+
+      // Bright ring on investor nodes
+      if (n.type === 'investor') {
+        const ringAlpha = 0.3 + Math.sin(networkTime * 1.5 + n.phase) * 0.1;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r + 1.5, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255,255,255,${ringAlpha * alpha})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Label
+      if (n.type === 'investor') {
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${Math.max(10, n.r * 0.5)}px -apple-system, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(n.label, n.x, n.y - 2);
+        ctx.font = `${Math.max(8, n.r * 0.35)}px -apple-system, sans-serif`;
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillText('$' + n.value.toFixed(1) + 'B', n.x, n.y + n.r * 0.4);
+      } else if (!(hoveredNode || hoveredEdge) || isHighlighted) {
+        ctx.fillStyle = 'rgba(226,232,240,' + alpha + ')';
+        ctx.font = '10px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(n.label, n.x, n.y + n.r + 4);
+      }
+
+      ctx.globalAlpha = 1;
+    });
+
+    animFrame = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// Mouse interaction - drag, hover, click
+canvas.addEventListener('mousedown', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  for (const n of nodes) {
+    const dx = mx - n.x;
+    const dy = my - n.y;
+    if (dx * dx + dy * dy < n.r * n.r) {
+      dragNode = n;
+      dragOffsetX = n.x - mx;
+      dragOffsetY = n.y - my;
+      didDrag = false;
+      e.preventDefault();
+      return;
+    }
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  // Handle dragging
+  if (dragNode) {
+    const newX = mx + dragOffsetX;
+    const newY = my + dragOffsetY;
+    // Check if we actually moved (threshold to distinguish click from drag)
+    if (!didDrag && (Math.abs(newX - dragNode.x) > 3 || Math.abs(newY - dragNode.y) > 3)) {
+      didDrag = true;
+    }
+    dragNode.x = newX;
+    dragNode.y = newY;
+    dragNode.baseX = newX;
+    dragNode.baseY = newY;
+    canvas.style.cursor = 'grabbing';
+    tooltip.style.display = 'none';
+    return;
+  }
+
+  hoveredNode = null;
+  hoveredEdge = null;
+
+  // Check nodes first (higher priority)
+  for (const n of nodes) {
+    const dx = mx - n.x;
+    const dy = my - n.y;
+    if (dx * dx + dy * dy < n.r * n.r) {
+      hoveredNode = n;
+      break;
+    }
+  }
+
+  // If no node hovered, check edges
+  if (!hoveredNode) {
+    hoveredEdge = findEdgeAt(mx, my);
+  }
+
+  const tt = document.getElementById('tooltip');
+
+  if (hoveredNode) {
+    canvas.style.cursor = 'grab';
+    tt.style.display = 'block';
+    tt.style.left = (e.clientX + 12) + 'px';
+    tt.style.top = (e.clientY + 12) + 'px';
+    tt.querySelector('.tooltip-name').textContent = hoveredNode.label;
+    if (hoveredNode.type === 'investor') {
+      tt.querySelector('.tooltip-detail').innerHTML =
+        `Portfolio: $${hoveredNode.value.toFixed(1)}B<br>${hoveredNode.holdings} holdings` +
+        `<br><span style="color:var(--text-dim)">Drag to reposition</span>`;
+    } else {
+      tt.querySelector('.tooltip-detail').innerHTML =
+        `Value: ${formatValue(hoveredNode.value)}` +
+        `<br>Type: ${hoveredNode.holdingType === 'public' ? 'Public' : 'Private'}` +
+        `<br>Sector: ${hoveredNode.sector}` +
+        `<br>Investors: ${hoveredNode.investors.join(', ')}` +
+        `<br><span style="color:var(--text-dim)">Drag to reposition</span>`;
+    }
+  } else if (hoveredEdge) {
+    canvas.style.cursor = 'pointer';
+    tt.style.display = 'block';
+    tt.style.left = (e.clientX + 12) + 'px';
+    tt.style.top = (e.clientY + 12) + 'px';
+    tt.querySelector('.tooltip-name').textContent =
+      `${hoveredEdge.investorName} → ${hoveredEdge.holdingName}`;
+    tt.querySelector('.tooltip-detail').innerHTML =
+      `Value: ${formatValue(hoveredEdge.value)}` +
+      `<br>Type: ${hoveredEdge.holdingType === 'public' ? 'Public Equity' : 'Private Investment'}` +
+      `<br><span style="color:#3b82f6">Click to view ownership source</span>`;
+  } else {
+    canvas.style.cursor = 'default';
+    tt.style.display = 'none';
+  }
+});
+
+canvas.addEventListener('mouseup', (e) => {
+  if (dragNode) {
+    dragNode = null;
+    canvas.style.cursor = 'default';
+  }
+});
+
+// Click handler - open source URL for edges (only if not dragging)
+canvas.addEventListener('click', (e) => {
+  if (didDrag) {
+    didDrag = false;
+    return;
+  }
+
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  // Check nodes first - don't navigate on node click
+  for (const n of nodes) {
+    const dx = mx - n.x;
+    const dy = my - n.y;
+    if (dx * dx + dy * dy < n.r * n.r) {
+      return;
+    }
+  }
+
+  // Check edges
+  const edge = findEdgeAt(mx, my);
+  if (edge && edge.url) {
+    window.open(edge.url, '_blank', 'noopener');
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  if (dragNode) {
+    dragNode = null;
+  }
+  hoveredNode = null;
+  hoveredEdge = null;
+  tooltip.style.display = 'none';
+});
+
+// Resize
+window.addEventListener('resize', () => {
+  if (document.getElementById('view-network').classList.contains('active')) {
+    drawNetwork();
+  }
+});
+
+// Initial draw
+drawNetwork();
+
+// ─── Settings Panel ─────────────────────────────────────────────────
+const settingsOverlay = document.getElementById('settingsOverlay');
+const settingsPanel = document.getElementById('settingsPanel');
+
+function openSettings() {
+  settingsOverlay.classList.add('open');
+  settingsPanel.classList.add('open');
+  updateCacheInfo();
+  // Load existing key
+  const key = localStorage.getItem('btt_finnhub_key');
+  document.getElementById('finnhubKeyInput').value = key || '';
+  document.getElementById('finnhubStatus').textContent = key ? 'Key saved' : '';
+}
+
+function closeSettings() {
+  settingsOverlay.classList.remove('open');
+  settingsPanel.classList.remove('open');
+}
+
+document.getElementById('btnSettings').addEventListener('click', openSettings);
+document.getElementById('settingsClose').addEventListener('click', closeSettings);
+settingsOverlay.addEventListener('click', closeSettings);
+
+document.getElementById('saveFinnhubKey').addEventListener('click', () => {
+  const key = document.getElementById('finnhubKeyInput').value.trim();
+  const statusEl = document.getElementById('finnhubStatus');
+  if (key) {
+    localStorage.setItem('btt_finnhub_key', key);
+    statusEl.textContent = 'Key saved. Refresh data to fetch prices.';
+    statusEl.className = 'settings-status';
+  } else {
+    localStorage.removeItem('btt_finnhub_key');
+    statusEl.textContent = 'Key removed.';
+    statusEl.className = 'settings-status';
+  }
+});
+
+document.getElementById('clearCache').addEventListener('click', () => {
+  Cache.clear();
+  updateCacheInfo();
+});
+
+function updateCacheInfo() {
+  const container = document.getElementById('cacheInfo');
+  const entries = Cache.getAll();
+  if (entries.length === 0) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--text-dim)">No cached data</div>';
+    return;
+  }
+  container.innerHTML = entries.map(e => {
+    const ageHours = (e.age / (1000 * 60 * 60)).toFixed(1);
+    return `<div class="cache-item">
+      <span class="cache-key">${e.key}</span>
+      <span class="cache-age">${ageHours}h ago</span>
+    </div>`;
+  }).join('');
+}
+
+// ─── Refresh button ─────────────────────────────────────────────────
+document.getElementById('btnRefresh').addEventListener('click', () => {
+  fetchLiveData(true);
+});
+
+// ─── Auto-fetch on page load ────────────────────────────────────────
+fetchLiveData(false);
+</script>
+</body>
+</html>
