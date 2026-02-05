@@ -715,7 +715,7 @@
     <div class="header-stats">
       <div class="header-stat">
         <div class="label">Companies Tracked</div>
-        <div class="value">12</div>
+        <div class="value">18</div>
       </div>
       <div class="header-stat">
         <div class="label">Total Holdings</div>
@@ -783,6 +783,12 @@
       <button class="filter-btn" data-filter="005930.KS">Samsung</button>
       <button class="filter-btn" data-filter="SFTBY">SoftBank</button>
       <button class="filter-btn" data-filter="CSCO">Cisco</button>
+      <button class="filter-btn" data-filter="0700.HK">Tencent</button>
+      <button class="filter-btn" data-filter="INTC">Intel</button>
+      <button class="filter-btn" data-filter="AMD">AMD</button>
+      <button class="filter-btn" data-filter="BABA">Alibaba</button>
+      <button class="filter-btn" data-filter="BIDU">Baidu</button>
+      <button class="filter-btn" data-filter="QCOM">Qualcomm</button>
       <select class="sort-select" id="sortSelect">
         <option value="value-desc">Sort: Highest Value</option>
         <option value="value-asc">Sort: Lowest Value</option>
@@ -851,22 +857,25 @@
 const curatedCompanies = [
   {
     name: "Microsoft", ticker: "MSFT", color: "#00a4ef",
-    totalValue: 144.0,
+    totalValue: 144.2,
     holdings: [
       { name: "OpenAI", ticker: "Private", value: 135, stake: "27%", sector: "AI", type: "private", source: "curated" },
       { name: "Anthropic", ticker: "Private", value: 5, stake: "~2%", sector: "AI", type: "private", source: "curated" },
       { name: "Cruise (GM)", ticker: "GM", value: 2, stake: "<1%", sector: "Autonomous Vehicles", type: "public", source: "curated" },
       { name: "G42", ticker: "Private", value: 1.5, stake: "~5%", sector: "AI", type: "private", source: "curated" },
       { name: "Mistral AI", ticker: "Private", value: 0.5, stake: "~1%", sector: "AI", type: "private", source: "curated" },
+      { name: "Figure AI", ticker: "Private", value: 0.1, stake: "<1%", sector: "Robotics", type: "private", source: "curated" },
+      { name: "Wayve", ticker: "Private", value: 0.1, stake: "<1%", sector: "Autonomous Vehicles", type: "private", source: "curated" },
     ]
   },
   {
     name: "Alphabet", ticker: "GOOGL", color: "#4285f4",
-    totalValue: 112.5,
+    totalValue: 115.9,
     holdings: [
       { name: "SpaceX", ticker: "Private", value: 90, stake: "~7%", sector: "Aerospace", type: "private", source: "curated" },
       { name: "Waymo", ticker: "Private", value: 13, stake: "Subsidiary", sector: "Autonomous Vehicles", type: "private", source: "curated" },
       { name: "Anthropic", ticker: "Private", value: 3.0, stake: "~14%", sector: "AI", type: "private", source: "curated" },
+      { name: "Isomorphic Labs", ticker: "Private", value: 3.0, stake: "Majority", sector: "AI / Drug Discovery", type: "private", source: "curated" },
       { name: "Character.ai", ticker: "Private", value: 2.7, stake: "Licensing", sector: "AI", type: "private", source: "curated" },
       { name: "GitLab", ticker: "GTLB", value: 0.55, stake: "~5%", sector: "DevOps", type: "public", source: "curated" },
       { name: "AST SpaceMobile", ticker: "ASTS", value: 0.459, stake: "~4%", sector: "Telecom", type: "public", source: "curated" },
@@ -879,23 +888,28 @@ const curatedCompanies = [
       { name: "Exact Sciences", ticker: "EXAS", value: 0.19, stake: "<1%", sector: "Healthcare", type: "public", source: "curated" },
       { name: "Recursion Pharma", ticker: "RXRX", value: 0.15, stake: "~2%", sector: "Biotech", type: "public", source: "curated" },
       { name: "Prime Medicine", ticker: "PRME", value: 0.12, stake: "~13%", sector: "Biotech", type: "public", source: "curated" },
+      { name: "Lightmatter", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI / Photonics", type: "private", source: "curated" },
+      { name: "Commonwealth Fusion", ticker: "Private", value: 0.1, stake: "<1%", sector: "Nuclear Fusion", type: "private", source: "curated" },
       { name: "Runway", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI / Video", type: "private", source: "curated" },
+      { name: "Harvey", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI / Legal", type: "private", source: "curated" },
+      { name: "QuEra Computing", ticker: "Private", value: 0.05, stake: "<1%", sector: "Quantum Computing", type: "private", source: "curated" },
     ]
   },
   {
     name: "Amazon", ticker: "AMZN", color: "#ff9900", cik: "1018724",
-    totalValue: 51.7,
+    totalValue: 51.8,
     holdings: [
       { name: "Anthropic", ticker: "Private", value: 39, stake: "~8%", sector: "AI", type: "private", source: "curated" },
       { name: "Scale AI", ticker: "Private", value: 5.0, stake: "~5%", sector: "AI / Data", type: "private", source: "curated" },
       { name: "Rivian", ticker: "RIVN", value: 4.6, stake: "~16%", sector: "Electric Vehicles", type: "public", source: "curated" },
       { name: "Hugging Face", ticker: "Private", value: 1.5, stake: "~3%", sector: "AI / Open Source", type: "private", source: "curated" },
       { name: "X-energy", ticker: "XE", value: 0.6, stake: "~2%", sector: "Nuclear Energy", type: "public", source: "curated" },
+      { name: "Agility Robotics", ticker: "Private", value: 0.1, stake: "<1%", sector: "Robotics", type: "private", source: "curated" },
     ]
   },
   {
     name: "Nvidia", ticker: "NVDA", color: "#76b900", cik: "1045810",
-    totalValue: 38.5,
+    totalValue: 39.5,
     holdings: [
       { name: "OpenAI", ticker: "Private", value: 20, stake: "~2%", sector: "AI", type: "private", source: "curated" },
       { name: "Anthropic", ticker: "Private", value: 10, stake: "~3%", sector: "AI", type: "private", source: "curated" },
@@ -904,12 +918,21 @@ const curatedCompanies = [
       { name: "Databricks", ticker: "Private", value: 0.3, stake: "<1%", sector: "AI / Data", type: "private", source: "curated" },
       { name: "Arm Holdings", ticker: "ARM", value: 0.147, stake: "<1%", sector: "Semiconductors", type: "public", source: "curated" },
       { name: "WeRide", ticker: "WRD", value: 0.12, stake: "~3%", sector: "Autonomous Vehicles", type: "public", source: "curated" },
+      { name: "Figure AI", ticker: "Private", value: 0.1, stake: "<1%", sector: "Robotics", type: "private", source: "curated" },
       { name: "ElevenLabs", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI / Audio", type: "private", source: "curated" },
       { name: "Applied Digital", ticker: "APLD", value: 0.1, stake: "~2%", sector: "Data Centers", type: "public", source: "curated" },
       { name: "Cohere", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI", type: "private", source: "curated" },
       { name: "Mistral AI", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI", type: "private", source: "curated" },
+      { name: "PsiQuantum", ticker: "Private", value: 0.1, stake: "<1%", sector: "Quantum Computing", type: "private", source: "curated" },
+      { name: "Quantinuum", ticker: "Private", value: 0.1, stake: "<1%", sector: "Quantum Computing", type: "private", source: "curated" },
+      { name: "TerraPower", ticker: "Private", value: 0.1, stake: "<1%", sector: "Nuclear Energy", type: "private", source: "curated" },
+      { name: "Commonwealth Fusion", ticker: "Private", value: 0.1, stake: "<1%", sector: "Nuclear Fusion", type: "private", source: "curated" },
+      { name: "Crusoe Energy", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI Data Centers", type: "private", source: "curated" },
+      { name: "Wayve", ticker: "Private", value: 0.1, stake: "<1%", sector: "Autonomous Vehicles", type: "private", source: "curated" },
+      { name: "Lila Sciences", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI / Drug Discovery", type: "private", source: "curated" },
       { name: "Recursion Pharma", ticker: "RXRX", value: 0.076, stake: "~1%", sector: "Biotech", type: "public", source: "curated" },
       { name: "Runway", ticker: "Private", value: 0.05, stake: "<1%", sector: "AI / Video", type: "private", source: "curated" },
+      { name: "QuEra Computing", ticker: "Private", value: 0.05, stake: "<1%", sector: "Quantum Computing", type: "private", source: "curated" },
       { name: "Perplexity AI", ticker: "Private", value: 0.03, stake: "<1%", sector: "AI / Search", type: "private", source: "curated" },
     ]
   },
@@ -923,13 +946,15 @@ const curatedCompanies = [
   },
   {
     name: "Salesforce", ticker: "CRM", color: "#00a1e0",
-    totalValue: 1.4,
+    totalValue: 1.5,
     holdings: [
       { name: "Anthropic", ticker: "Private", value: 0.75, stake: "~2%", sector: "AI", type: "private", source: "curated" },
       { name: "Cohere", ticker: "Private", value: 0.25, stake: "~3%", sector: "AI", type: "private", source: "curated" },
       { name: "Hugging Face", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI / Open Source", type: "private", source: "curated" },
       { name: "Together AI", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI / Infrastructure", type: "private", source: "curated" },
+      { name: "Figure AI", ticker: "Private", value: 0.05, stake: "<1%", sector: "Robotics", type: "private", source: "curated" },
       { name: "ElevenLabs", ticker: "Private", value: 0.05, stake: "<1%", sector: "AI / Audio", type: "private", source: "curated" },
+      { name: "Mistral AI", ticker: "Private", value: 0.05, stake: "<1%", sector: "AI", type: "private", source: "curated" },
       { name: "Runway", ticker: "Private", value: 0.05, stake: "<1%", sector: "AI / Video", type: "private", source: "curated" },
       { name: "World Labs", ticker: "Private", value: 0.05, stake: "<1%", sector: "AI / 3D", type: "private", source: "curated" },
       { name: "Writer", ticker: "Private", value: 0.05, stake: "<1%", sector: "AI / Enterprise", type: "private", source: "curated" },
@@ -971,22 +996,81 @@ const curatedCompanies = [
   },
   {
     name: "SoftBank", ticker: "SFTBY", color: "#c9a84c",
-    totalValue: 206.5,
+    totalValue: 213.9,
     holdings: [
       { name: "Arm Holdings", ticker: "ARM", value: 153, stake: "~90%", sector: "Semiconductors", type: "public", source: "curated" },
       { name: "OpenAI", ticker: "Private", value: 40, stake: "~11%", sector: "AI", type: "private", source: "curated" },
       { name: "ByteDance", ticker: "Private", value: 7, stake: "~2%", sector: "AI / Social", type: "private", source: "curated" },
       { name: "Ampere Computing", ticker: "Private", value: 6.5, stake: "100%", sector: "Semiconductors", type: "private", source: "curated" },
+      { name: "ABB Robotics", ticker: "Private", value: 5.4, stake: "100%", sector: "Robotics", type: "private", source: "curated" },
+      { name: "Skild AI", ticker: "Private", value: 0.5, stake: "<10%", sector: "Robotics / AI", type: "private", source: "curated" },
+      { name: "Graphcore", ticker: "Private", value: 0.5, stake: "100%", sector: "AI Chips", type: "private", source: "curated" },
+      { name: "Symbotic", ticker: "SYM", value: 0.5, stake: "~8%", sector: "Robotics / Automation", type: "public", source: "curated" },
+      { name: "Wayve", ticker: "Private", value: 0.3, stake: "<5%", sector: "Autonomous Vehicles", type: "private", source: "curated" },
+      { name: "Perplexity AI", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI / Search", type: "private", source: "curated" },
+      { name: "QuEra Computing", ticker: "Private", value: 0.1, stake: "<5%", sector: "Quantum Computing", type: "private", source: "curated" },
     ]
   },
   {
     name: "Cisco", ticker: "CSCO", color: "#00bceb",
-    totalValue: 0.5,
+    totalValue: 0.55,
     holdings: [
       { name: "xAI (SpaceX)", ticker: "Private", value: 0.2, stake: "<1%", sector: "AI", type: "private", source: "curated" },
       { name: "Cohere", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI", type: "private", source: "curated" },
       { name: "Mistral AI", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI", type: "private", source: "curated" },
       { name: "Scale AI", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI / Data", type: "private", source: "curated" },
+      { name: "World Labs", ticker: "Private", value: 0.05, stake: "<1%", sector: "AI / 3D", type: "private", source: "curated" },
+    ]
+  },
+  {
+    name: "Tencent", ticker: "0700.HK", color: "#25c2a0",
+    totalValue: 27.7,
+    holdings: [
+      { name: "Epic Games", ticker: "Private", value: 16, stake: "~40%", sector: "Gaming / Metaverse", type: "private", source: "curated" },
+      { name: "Sea Limited", ticker: "SE", value: 11, stake: "~18%", sector: "E-commerce / Fintech", type: "public", source: "curated" },
+      { name: "Zhipu AI", ticker: "Private", value: 0.5, stake: "<5%", sector: "AI", type: "private", source: "curated" },
+      { name: "Baichuan Intelligence", ticker: "Private", value: 0.2, stake: "<5%", sector: "AI", type: "private", source: "curated" },
+    ]
+  },
+  {
+    name: "Intel", ticker: "INTC", color: "#0071c5",
+    totalValue: 0.6,
+    holdings: [
+      { name: "SambaNova Systems", ticker: "Private", value: 0.2, stake: "<5%", sector: "AI Chips", type: "private", source: "curated" },
+      { name: "Scale AI", ticker: "Private", value: 0.2, stake: "<1%", sector: "AI / Data", type: "private", source: "curated" },
+      { name: "Figure AI", ticker: "Private", value: 0.1, stake: "<1%", sector: "Robotics", type: "private", source: "curated" },
+      { name: "AI21 Labs", ticker: "Private", value: 0.1, stake: "<5%", sector: "AI", type: "private", source: "curated" },
+    ]
+  },
+  {
+    name: "AMD", ticker: "AMD", color: "#ed1c24",
+    totalValue: 0.87,
+    holdings: [
+      { name: "Silo AI", ticker: "Private", value: 0.665, stake: "100%", sector: "AI", type: "private", source: "curated" },
+      { name: "xAI (SpaceX)", ticker: "Private", value: 0.2, stake: "<1%", sector: "AI", type: "private", source: "curated" },
+    ]
+  },
+  {
+    name: "Alibaba", ticker: "BABA", color: "#e5531a",
+    totalValue: 2.0,
+    holdings: [
+      { name: "Xpeng", ticker: "XPEV", value: 1.5, stake: "~11%", sector: "Autonomous Vehicles", type: "public", source: "curated" },
+      { name: "Moonshot AI", ticker: "Private", value: 0.3, stake: "<5%", sector: "AI", type: "private", source: "curated" },
+      { name: "MiniMax", ticker: "Private", value: 0.2, stake: "<5%", sector: "AI", type: "private", source: "curated" },
+    ]
+  },
+  {
+    name: "Baidu", ticker: "BIDU", color: "#2932e1",
+    totalValue: 3.0,
+    holdings: [
+      { name: "Kunlunxin", ticker: "Private", value: 3.0, stake: "Majority", sector: "AI Chips", type: "private", source: "curated" },
+    ]
+  },
+  {
+    name: "Qualcomm", ticker: "QCOM", color: "#3253dc",
+    totalValue: 0.1,
+    holdings: [
+      { name: "Figure AI", ticker: "Private", value: 0.1, stake: "<1%", sector: "Robotics", type: "private", source: "curated" },
     ]
   },
 ];
