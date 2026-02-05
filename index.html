@@ -715,7 +715,7 @@
     <div class="header-stats">
       <div class="header-stat">
         <div class="label">Companies Tracked</div>
-        <div class="value">18</div>
+        <div class="value">17</div>
       </div>
       <div class="header-stat">
         <div class="label">Total Holdings</div>
@@ -781,8 +781,7 @@
       <button class="filter-btn" data-filter="TSLA">Tesla</button>
       <button class="filter-btn" data-filter="AAPL">Apple</button>
       <button class="filter-btn" data-filter="005930.KS">Samsung</button>
-      <button class="filter-btn" data-filter="SFTBY">SoftBank</button>
-      <button class="filter-btn" data-filter="CSCO">Cisco</button>
+<button class="filter-btn" data-filter="CSCO">Cisco</button>
       <button class="filter-btn" data-filter="0700.HK">Tencent</button>
       <button class="filter-btn" data-filter="INTC">Intel</button>
       <button class="filter-btn" data-filter="AMD">AMD</button>
@@ -992,23 +991,6 @@ const curatedCompanies = [
       { name: "Rainbow Robotics", ticker: "277810.KQ", value: 0.3, stake: "~15%", sector: "Robotics", type: "public", source: "curated" },
       { name: "Wacom", ticker: "6727.T", value: 0.15, stake: "~5%", sector: "Input Devices", type: "public", source: "curated" },
       { name: "Hotel Shilla", ticker: "008770.KS", value: 0.2, stake: "~5%", sector: "Hospitality", type: "public", source: "curated" },
-    ]
-  },
-  {
-    name: "SoftBank", ticker: "SFTBY", color: "#c9a84c",
-    totalValue: 213.9,
-    holdings: [
-      { name: "Arm Holdings", ticker: "ARM", value: 153, stake: "~90%", sector: "Semiconductors", type: "public", source: "curated" },
-      { name: "OpenAI", ticker: "Private", value: 40, stake: "~11%", sector: "AI", type: "private", source: "curated" },
-      { name: "ByteDance", ticker: "Private", value: 7, stake: "~2%", sector: "AI / Social", type: "private", source: "curated" },
-      { name: "Ampere Computing", ticker: "Private", value: 6.5, stake: "100%", sector: "Semiconductors", type: "private", source: "curated" },
-      { name: "ABB Robotics", ticker: "Private", value: 5.4, stake: "100%", sector: "Robotics", type: "private", source: "curated" },
-      { name: "Skild AI", ticker: "Private", value: 0.5, stake: "<10%", sector: "Robotics / AI", type: "private", source: "curated" },
-      { name: "Graphcore", ticker: "Private", value: 0.5, stake: "100%", sector: "AI Chips", type: "private", source: "curated" },
-      { name: "Symbotic", ticker: "SYM", value: 0.5, stake: "~8%", sector: "Robotics / Automation", type: "public", source: "curated" },
-      { name: "Wayve", ticker: "Private", value: 0.3, stake: "<5%", sector: "Autonomous Vehicles", type: "private", source: "curated" },
-      { name: "Perplexity AI", ticker: "Private", value: 0.1, stake: "<1%", sector: "AI / Search", type: "private", source: "curated" },
-      { name: "QuEra Computing", ticker: "Private", value: 0.1, stake: "<5%", sector: "Quantum Computing", type: "private", source: "curated" },
     ]
   },
   {
@@ -1816,20 +1798,23 @@ function setupNetwork() {
   edges = [];
   particles = [];
 
-  // Place investor nodes in a circle
+  // Place investor nodes in a circle, sized by log(portfolio)
   const investorRadius = Math.min(networkW, networkH) * 0.3;
   const investorCompanies = companies.filter(c => c.holdings.length > 0);
+  const maxInvVal = Math.max(...investorCompanies.map(c => c.totalValue), 1);
+  const logMaxInv = Math.log10(1 + maxInvVal);
 
   investorCompanies.forEach((c, i) => {
     const angle = (i / investorCompanies.length) * Math.PI * 2 - Math.PI / 2;
     const baseX = cx + Math.cos(angle) * investorRadius;
     const baseY = cy + Math.sin(angle) * investorRadius;
+    const logScale = c.totalValue > 0 ? Math.log10(1 + c.totalValue) / logMaxInv : 0;
     nodes.push({
       id: c.ticker,
       label: c.name,
       baseX, baseY,
       x: baseX, y: baseY,
-      r: 28 + Math.min(c.totalValue / 5, 20),
+      r: 15 + 35 * logScale,
       color: c.color,
       type: 'investor',
       value: c.totalValue,
@@ -1856,21 +1841,24 @@ function setupNetwork() {
     });
   });
 
-  // Place holding nodes
+  // Place holding nodes, sized by log(value)
   const holdingArr = [...holdingMap.values()];
   const outerRadius = Math.min(networkW, networkH) * 0.44;
+  const maxHoldVal = Math.max(...holdingArr.map(h => h.value), 1);
+  const logMaxHold = Math.log10(1 + maxHoldVal);
 
   holdingArr.forEach((h, i) => {
     const angle = (i / holdingArr.length) * Math.PI * 2 - Math.PI / 2 + 0.15;
     const jitter = (Math.random() - 0.5) * 30;
     const baseX = cx + Math.cos(angle) * (outerRadius + jitter);
     const baseY = cy + Math.sin(angle) * (outerRadius + jitter);
+    const logScale = h.value > 0 ? Math.log10(1 + h.value) / logMaxHold : 0;
     nodes.push({
       id: h.name,
       label: h.name,
       baseX, baseY,
       x: baseX, y: baseY,
-      r: 6 + Math.min(h.value * 2, 16),
+      r: 4 + 18 * logScale,
       color: h.type === 'public' ? '#10b981' : '#f59e0b',
       type: 'holding',
       value: h.value,
